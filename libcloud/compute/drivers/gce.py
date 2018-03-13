@@ -3867,7 +3867,8 @@ class GCENodeDriver(NodeDriver):
             ex_disks_gce_struct=None, ex_nic_gce_struct=None,
             ex_on_host_maintenance=None, ex_automatic_restart=None,
             ex_preemptible=None, ex_image_family=None, ex_labels=None,
-            ex_accelerator_type=None, ex_accelerator_count=None):
+            ex_accelerator_type=None, ex_accelerator_count=None,
+            min_cpu_platform=None):
         """
         Create a new node and return a node object for the node.
 
@@ -4074,7 +4075,7 @@ class GCENodeDriver(NodeDriver):
             ex_can_ip_forward, ex_disks_gce_struct, ex_nic_gce_struct,
             ex_on_host_maintenance, ex_automatic_restart, ex_preemptible,
             ex_subnetwork, ex_labels, ex_accelerator_type,
-            ex_accelerator_count)
+            ex_accelerator_count, min_cpu_platform)
         self.connection.async_request(request, method='POST', data=node_data)
         return self.ex_get_node(name, location.name)
 
@@ -4233,7 +4234,7 @@ class GCENodeDriver(NodeDriver):
             preemptible=None, tags=None, metadata=None,
             description=None, disks_gce_struct=None, nic_gce_struct=None,
             use_selflinks=True, labels=None, accelerator_type=None,
-            accelerator_count=None):
+            accelerator_count=None, min_cpu_platform=None):
         """
         Create the GCE instance properties needed for instance templates.
 
@@ -4450,6 +4451,9 @@ class GCENodeDriver(NodeDriver):
 
         instance_properties['machineType'] = self._get_selflink_or_name(
             obj=node_size, get_selflinks=use_selflinks, objname='size')
+
+        if min_cpu_platform:
+            instance_properties['minCpuPlatform'] = str(min_cpu_platform)
 
         return instance_properties
 
@@ -7922,7 +7926,7 @@ class GCENodeDriver(NodeDriver):
             ex_disks_gce_struct=None, ex_nic_gce_struct=None,
             ex_on_host_maintenance=None, ex_automatic_restart=None,
             ex_preemptible=None, ex_subnetwork=None, ex_labels=None,
-            ex_accelerator_type=None, ex_accelerator_count=None):
+            ex_accelerator_type=None, ex_accelerator_count=None, min_cpu_platform=None):
         """
         Returns a request and body to create a new node.
 
@@ -8083,7 +8087,8 @@ class GCENodeDriver(NodeDriver):
             nic_gce_struct=ex_nic_gce_struct,
             accelerator_type=ex_accelerator_type,
             accelerator_count=ex_accelerator_count,
-            use_selflinks=use_selflinks)
+            use_selflinks=use_selflinks,
+            min_cpu_platform=min_cpu_platform)
         node_data['name'] = name
 
         request = '/zones/%s/instances' % (location.name)
@@ -8685,6 +8690,8 @@ class GCENodeDriver(NodeDriver):
         extra['zone'] = self.ex_get_zone(node['zone'])
         extra['image'] = node.get('image')
         extra['machineType'] = node.get('machineType')
+        extra['cpuPlatform'] = node.get('cpuPlatform', 'UNKNOWN')
+        extra['minCpuPlatform'] = node.get('minCpuPlatform', 'UNKNOWN')
         extra['disks'] = node.get('disks', [])
         extra['networkInterfaces'] = node.get('networkInterfaces')
         extra['id'] = node['id']
